@@ -1,0 +1,7 @@
+{
+    "name": "sillymod",
+    "creator": "lokisolos",
+    "description": "The newest edition to the The Silly family! Features a bear split GUI",
+    "version": "1.0.0",
+    "entry": "index.js"
+  }
