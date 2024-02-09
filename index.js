@@ -106,11 +106,6 @@ register("renderOverlay", () => {
 register("chat", () => {
   if (currentBear == 0) return;
   if (Scoreboard.getLines().length < 7) {
-    const scoreboard = Scoreboard.getLines();
-    for (let i = 0; i < scoreboard.length; i++) {
-      console.log(`${i}"${scoreboard[i]}"`);
-      log(`${i}"${scoreboard[i]}"`);
-    }
     reset();
     return;
   }
