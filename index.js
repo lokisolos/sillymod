@@ -18,166 +18,37 @@ A couple of things to consider:
     * make display use block instead of chat messages
 */
 
-const data = require("./save.js");
-
-// time savers
-const log = (message) => {
-  ChatLib.chat("§5§lsillymod§5 §6> §7" + message); /* chat shorthand */
-};
-const now = () => {
-  return Client.Companion.getSystemTime(); /* get current time */
-};
-const fillDisplay = () => {
-  for (let x = 1; x <= data.getConfig("lenLimit"); x++)
-    display.setLine(x - 1, `Bear ${x}:    0  (0)`);
-};
-
-const isNumeric = (string) => {
-  for (let c in string)
-    if (!"0123456789".includes(string[c])) {
-      return false;
-    }
-  return true;
-};
-
-const reset = () => {
-  display.hide();
-  display.clearLines();
-  bearSpawnTimes = [];
-  bearDieTimes = [];
-  enteredTime = null;
-  currentBear = 0;
-  pause = false;
-};
-
-const display = new Display();
-display.hide();
-
-display.setRenderX(data.getConfig("renderX"));
-display.setRenderY(data.getConfig("renderY"));
-
-let bg = data.getConfig("bgcolor");
-display
-  .setBackgroundColor(Renderer.color(bg["r"], bg["g"], bg["b"], bg["a"]))
-  .setBackground(data.getConfig("bg"));
-let color = data.getConfig("text");
-display.setTextColor(Renderer.color(color["r"], color["g"], color["b"]));
-
-let currentBear = 0;
-let enteredTime = null;
-var bearSpawnTimes = [];
-var bearDieTimes = [];
-let pause = false;
-
-/* legacy */
-// display.addLine("Bear 1: 0.00s");
-// display.addLine("Bear 2: 0.00s");
-// display.addLine("Bear 3: 0.00s");
+import { data } from "./lib/save.js";
+import { Settings } from "./lib/settings.js";
+import { BearDisplay } from "./lib/display.js";
+import { log } from "./lib/utils.js";
 
 register("worldLoad", () => {
-  if (data.getConfig("firstlogin") == 0) {
+  if (data.getConfig("firstlogin") == 1) {
     help();
     log(
       "This message was displayed because this is your first login with §5§lsillymod§r§7, to see it again use §d/sillymod help§7."
     );
-    data.setConfig("firstlogin", 1);
+    ChatLib.chat(
+      "§6" +
+        ChatLib.getChatBreak("-") +
+        "§r\n" +
+        ChatLib.getCenteredText("§5§lsillymod §d(v1.1)") +
+        "§r\n" +
+        "§6" +
+        ChatLib.getChatBreak("-") +
+        "§r\n" +
+        "§d§ka§r §5§lUPDATE! §d§ka§r §6- §r§5(v1.1 5/25/24)" +
+        "§r\n" +
+        "§5‣ §7/sm config GUI added\n§r" +
+        "§5‣ §7Added an auto-remove friends command\n" +
+        "§5‣ §7Massive refactoring under the hood\n" +
+        "§6" +
+        ChatLib.getChatBreak("-")
+    );
+    data.setConfig("firstlogin", 0);
   }
 });
-
-register("renderOverlay", () => {
-  if (currentBear == 0) return;
-  if (bearDieTimes.length >= data.getConfig("lenLimit")) return;
-  if (pause) return;
-  let t = (now() - bearSpawnTimes[currentBear - 1]) / 1000;
-  if (isNaN(t)) {
-    t = "0";
-  } else {
-    t = `${t.toFixed(2)}s`;
-  }
-  display.setLine(
-    currentBear - 1,
-    `Bear ${currentBear}:    ${((now() - enteredTime) / 1000).toFixed(
-      2
-    )}s (${t}) `
-  );
-});
-
-// Auto-hide when out of dungeon.
-register("chat", () => {
-  if (currentBear == 0) return;
-  if (Scoreboard.getLines().length < 7) {
-    reset();
-    return;
-  }
-  /*
-   * This is very much not a counterintuitive method, however,
-   * let me put something into perspective.
-   * 10:30 PM - implemented auto-hiding by using chat, checks 7th line of scoreboard
-   * 11:00 PM - implemented the above but with m4
-   * 1:00 AM - suddenly does not work
-   * 2:30 AM - time i am writing this, apparently the scoreboard randomly gains and loses
-   * elements, making checking an indidivual position unviable; i have no clue as to why
-   * or how this happens, and why it was working earlier, but hopefully this should fix it.
-   * 2:40 PM - Proposed fix didn't work, the message in the leaderboard changes randomly
-   * and I don't know why, for example: §7⏣ §cThe Catac🌠§combs §7(F4) vs
-   * §7⏣ §cThe Catac👾§combs §7(F4)
-   */
-  var flag = false;
-  const scoreboard = Scoreboard.getLines();
-  for (let i = 0; i < scoreboard.length; i++) {
-    if (
-      scoreboard[i].toString().includes("(F4)") ||
-      scoreboard[i].toString().includes("(M4)") //||
-      //scoreboard[i].toString() == " §7⏣ §cThe Catac👾§combs §7(F4)"
-    )
-      flag = true;
-  }
-  if (!flag) {
-    reset();
-  }
-});
-
-register("chat", () => {
-  pause = true;
-}).setCriteria("                        The Catacombs - Floor IV");
-
-register("chat", () => {
-  pause = true;
-}).setCriteria("                   Master Mode Catacombs - Floor IV");
-
-register("chat", () => {
-  bearSpawnTimes.push(now());
-}).setCriteria("A Spirit Bear has appeared!");
-
-register("chat", () => {
-  if (bearSpawnTimes.length == 0) {
-    // In the event that the mod is enabled after a bear is killed,
-    // we'll ignore it since we can't know when it spawned
-    return;
-  }
-  currentBear++;
-  bearDieTimes.push(now());
-}).setCriteria("The Spirit Bow has dropped!");
-
-// Show display & start timer
-register("chat", () => {
-  log("Timer started; Boss entered.");
-  enteredTime = now();
-  currentBear = 1;
-  fillDisplay();
-  display.show();
-}).setCriteria(
-  "[BOSS] Thorn: Welcome Adventurers! I am Thorn, the Spirit! And host of the Vegan Trials!"
-);
-
-// debug
-register("command", () => {
-  if (enteredTime === null) {
-    ChatLib.chat("Haven't entered boss yet!");
-    return;
-  }
-  ChatLib.chat(`${(now() - enteredTime) / 1000} seconds elapsed.`);
-}).setName("/");
 
 register("command", (command, ...args) => {
   if (!command) command = "help";
@@ -185,22 +56,25 @@ register("command", (command, ...args) => {
     case "help":
       help();
       break;
-    case "setcolor":
-      setcolor(args);
-      break;
-    case "setbg":
-      setbg(args);
-      break;
-    case "togglebg":
-      togglebg();
-      data.setConfig("bg", display.getBackground().toString());
-      break;
-    case "setlimit":
-      setlimit(args);
+    case "config":
+      Settings.openGUI();
       break;
     case "move":
-      move();
+      BearDisplay.move();
       break;
+    case "start":
+      BearDisplay.start();
+      break;
+    case "stop":
+      BearDisplay.reset();
+      log("Stopped timer");
+      break;
+    case "fremove":
+      fremove(args);
+      return;
+    case "fkeep":
+      fkeep(args);
+      return;
     default:
       log("Unknown command, use §d/sillymod help§7 for more information.");
   }
@@ -213,134 +87,70 @@ function help() {
     "§6" +
       ChatLib.getChatBreak("-") +
       "§r\n" +
-      ChatLib.getCenteredText("§5§lsillymod §d(v1.0)") +
+      ChatLib.getCenteredText("§d§ka§r §5§lsillymod §d(v1.1) §d§ka§r") +
       "§r\n" +
       "§6" +
       ChatLib.getChatBreak("-") +
       "§r\n" +
-      '§5§lPRO TIP!§6 - §7"§5/sm§7" works as an alias of "§5/sillymod§7"!\n' +
-      "§5/sillymod §dhelp§6 - §7§oSends this message in chat.\n" +
-      "§5/sillymod §dmove§6 - §7§oMove bear split display (GUI).\n" +
-      "§5/sillymod §dsetlimit §5<amount>§6 - §7§oSets the max amount of display lines.\n" +
-      "§5/sillymod §dsetcolor §5<r> <g> <b>§6 - §7§oSets text color of the display.\n" +
-      "§5/sillymod §dsetbg §5<r> <g> <b> <a>§6 - §7§oSets background of the display.\n" +
-      "§5/sillymod §dtogglebg §6 - §7§oToggles display background.\n" +
+      '§5§lPRO  TIP!§6 - §7"§5/sm§7" works as an alias of "§5/sillymod§7"!\n' +
+      "§5/sillymod §dhelp§6 - §7§oSends this message in chat\n" +
+      "§5/sillymod §dconfig (§5/smc§d)§6 - §7§oOpens settings menu\n" +
+      "§5/sillymod §d[start/stop] §6 - §7§oToggle timer if it didn't start auto\n" +
+      "§5/sillymod §dfremove §6 - §7§oQueues an ign to remove if they leave\n" +
+      "§5/sillymod §dfkeep §6 - §7§oWill stop fremove from removing a friend\n" +
       "§6" +
       ChatLib.getChatBreak("-")
   );
 }
 
-function togglebg() {
-  if (display.getBackground() == "FULL") {
-    display.setBackground("NONE");
-    log("Toggled background visibility off.");
+function fkeep(args) {
+  if (args.length != 1) {
+    log("Specify a user to remove from the fremove queue!");
     return;
   }
-  display.setBackground("FULL");
-  log("Toggled background visibility on.");
+  const list = data.getConfig("remove");
+  const index = list.indexOf(args[0]);
+  if (index == -1) {
+    log(`§c${args[0]} isn't even queued to be removed! youre so stupid!`);
+    return;
+  }
+  list.splice(index, 1);
+  data.setConfig("remove", list);
+  log(`${args[0]} will no longer be removed from your friend's list`);
 }
-function setcolor(args) {
-  if (args.length < 3) {
-    log(
-      "Usage: /sillymod setcolor <r> <g> <b> (ex: /sillymod setcolor 255 0 0)"
-    );
+
+function fremove(args) {
+  if (args.length != 1) {
+    log("Specify a user to be removed when they log off.");
     return;
   }
-  for (let i = 0; i < 3; i++) {
-    if (!isNumeric(args[i])) {
-      log("Invalid parameter! (ex: /sillymod setcolor 255 0 0)");
+  const ign = args[0];
+  const list = data.getConfig("remove");
+  list.push(ign);
+  data.setConfig("remove", list);
+  log(`§c${ign} will be removed from your friend's list when they log off.`);
+}
+
+const leaveListener = (ign) => {
+  const removel = data.ifConfig("remove");
+  if (!removel) {
+    return;
+  }
+  for (var toremove = 0; toremove < removel.length; toremove++) {
+    if (removel[toremove].toLowerCase() == ign.toLowerCase()) {
+      ChatLib.command(`f remove ${ign}`);
+      removel.splice(toremove, 1);
+      data.setConfig("remove", removel);
       return;
     }
   }
-  display.setTextColor(
-    Renderer.color(parseInt(args[0]), parseInt(args[1]), parseInt(args[2]))
-  );
-  const con = data.getConfig();
-  con["text"]["r"] = parseInt(args[0]);
-  con["text"]["g"] = parseInt(args[1]);
-  con["text"]["b"] = parseInt(args[2]);
-  data.saveConfig(con);
-  log(`Set text color to §d(${args[0]}, ${args[1]}, ${args[2]})§7.`);
-}
+};
 
-function setbg(args) {
-  if (args.length < 4) {
-    log(
-      "Usage: /sillymod setbg <r> <g> <b> <transparency> (ex: /sillymod setbg 255 0 0 50)"
-    );
-    return;
-  }
-  for (let i = 0; i < 4; i++) {
-    if (!isNumeric(args[i])) {
-      log("Invalid parameter! (ex: /sillymod setbg 255 0 0 50)");
-      return;
-    }
-  }
-  display.setBackgroundColor(
-    Renderer.color(
-      parseInt(args[0]),
-      parseInt(args[1]),
-      parseInt(args[2]),
-      parseInt(args[3])
-    )
-  );
-  const con = data.getConfig();
-  con["bgcolor"]["r"] = parseInt(args[0]);
-  con["bgcolor"]["g"] = parseInt(args[1]);
-  con["bgcolor"]["b"] = parseInt(args[2]);
-  con["bgcolor"]["a"] = parseInt(args[3]);
-  data.saveConfig(con);
-  log(`Set background color to §d(${args[0]}, ${args[1]}, ${args[2]})§7.`);
-}
+register("chat", leaveListener).setCriteria("Friend > ${friend} left.");
+register("chat", leaveListener).setCriteria("Guild > ${friend} left.");
 
-function setlimit(args) {
-  if (!args || args.length == 0) {
-    log("Usage: /sillymod setlimit <amount> (ex: /sillymod setlimit 4)");
-    return;
-  }
-  const num = args[0];
-  for (let c in num)
-    if (!"0123456789".includes(num[c])) {
-      log("Invalid parameter! Must be a number (ex: 5).");
-      return;
-    }
-  data.setConfig("lenLimit", parseInt(num));
-  log("Set bear display line limit to §d" + num + "§7.");
-  if (display.getShouldRender()) {
-    for (let i = display.getLines().length; i > parseInt(num); i--) {
-      display.removeLine(i);
-    }
-  }
-}
+register("command", () => {
+  ChatLib.command("warp dhub");
+}).setName("dh");
 
-function move() {
-  log("Move mouse to select position, click to finalize.");
-  const gui = new Gui();
-  gui.open();
-
-  const wasShowing = display.getShouldRender();
-  if (!wasShowing) {
-    fillDisplay();
-  }
-  display.show();
-
-  gui.registerDraw((mX, mY, pTick) => {
-    display.setRenderX(mX);
-    display.setRenderY(mY);
-  });
-  const closeGUI = () => {
-    if (wasShowing) return;
-    display.clearLines();
-    display.hide();
-  };
-  gui.registerClosed(closeGUI);
-  gui.registerClicked(() => {
-    closeGUI();
-    data.setConfig("renderX", display.getRenderX());
-    data.setConfig("renderY", display.getRenderY());
-    gui.close();
-    log(
-      `Saved position as §5(${display.getRenderX()}, ${display.getRenderY()})§7.`
-    );
-  });
-}
+register("command", Settings.openGUI).setName("smc");
