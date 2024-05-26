@@ -1,7 +1,1 @@
-{
-    "name": "sillymod",
-    "creator": "lokisolos",
-    "description": "The newest edition to the The Silly family! Features a bear split GUI",
-    "version": "1.0.0",
-    "entry": "index.js"
-  }
+{"name":"sillymod","creator":"lokisolos","description":"Simple f/m4 bear split GUI","version":"1.1","entry":"index.js","requires":["Vigilance"],"firstlogin":1}
