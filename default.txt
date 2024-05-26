@@ -1,4 +1,0 @@
-The following is the default save file (config.json) for 
-this mod, if you ever feel the need to reset the mod or
-if the save file is lost, paste the following into "config.json":
-{"renderX":0,"renderY":0,"lenLimit":6,"firstlogin":0,"text":{"r":255,"g":255,"b":255},"bg":"FULL","bgcolor":{"r":0,"g":0,"b":0,"a":150}}
