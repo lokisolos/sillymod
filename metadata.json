@@ -1,1 +1,1 @@
-{"name":"sillymod","creator":"lokisolos","description":"Simple f/m4 bear split GUI","version":"1.1","entry":"index.js","requires":["Vigilance"],"firstlogin":1}
+{"name":"sillymod","creator":"lokisolos","description":"Simple f/m4 bear split GUI","version":"1.1","entry":"index.js","requires":["Vigilance"],"firstlogin":1,"remove":[]}
